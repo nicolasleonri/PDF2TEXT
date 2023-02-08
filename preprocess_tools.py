@@ -1,9 +1,7 @@
-from PIL import Image
 import os
-from numpy import *
-import numpy as np
-from matplotlib import pyplot as plt
 import cv2
+from PIL import Image
+import numpy as np
 
 """
 TODOS:

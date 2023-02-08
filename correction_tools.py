@@ -1,11 +1,6 @@
-from PIL import Image
-import os
-from numpy import *
-import numpy as np
-from matplotlib import pyplot as plt
-import cv2
-from spellchecker import SpellChecker
 import re
+import numpy as np
+from spellchecker import SpellChecker
 from string import ascii_letters, printable, punctuation
 from collections import Counter
 
@@ -163,7 +158,7 @@ def call_viterbi_segment(line, dict, conf):
     Args:
     line (str): The text to be segmented.
     dictionary (dict): A dictionary of words and their frequencies.
-    conf (double): The confidence level to be used as reference.
+    conf (float): The confidence level to be used as reference.
 
     Returns:
     str: The segmented text.
@@ -196,7 +191,7 @@ def call_viterbi_segment(line, dict, conf):
         words.reverse()
 
         # confidence level
-        if probs[-1] == double(conf):
+        if probs[-1] == float(conf):
             return None
 
         return words, probs[-1]

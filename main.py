@@ -1,18 +1,11 @@
 import os
-import re
-import cv2
+import csv
 import pandas
 import numpy as np
 import pytesseract
 from PIL import Image
 from preprocess_tools import *
 from correction_tools import *
-from collections import Counter
-from matplotlib import pyplot as plt
-from spellchecker import SpellChecker
-from spellchecker import SpellChecker
-import csv
-
 
 def clean_text_column(image):
     df = pytesseract.image_to_data(image, output_type='data.frame')

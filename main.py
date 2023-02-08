@@ -7,6 +7,7 @@ from PIL import Image
 from preprocess_tools import *
 from correction_tools import *
 
+
 def clean_text_column(image):
     df = pytesseract.image_to_data(image, output_type='data.frame')
 

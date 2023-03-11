@@ -38,7 +38,7 @@ def get_fullpath(dir_name, base_filename):
     return os.path.join(dir_name, base_filename)
 
 
-def show_image(image):
+def show_image_from_path(path):
     """
     Creates a window and displays an image in it.
 
@@ -53,8 +53,17 @@ def show_image(image):
     name_of_window = 'Test_Window'
     cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
 
+    image = cv2.imread(path)
     cv2.imshow(name_of_window, image)
-    cv2.waitKey()
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def show_image_from_variable(input):
+    name_of_window = 'Test_Window'
+    cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
+
+    cv2.imshow(name_of_window, input)
+    cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
@@ -219,4 +228,48 @@ def preprocess(image):
 
         return denoised_and_thresholded
 
-    return thresh(denoise_and_threshold(scale(remove_pictures(denoise_color(normalize(image))))))
+    #return thresh(denoise_and_threshold(scale(remove_pictures(denoise_color(normalize(image))))))
+    return normalize(image)
+
+
+def remove_images(image, lower_area=15000, upper_area=35000):
+    b,g,r = cv2.split(image)
+    rgb_img = cv2.merge([r,g,b])
+
+    # Convert image from BGR to binary
+    binary = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2GRAY)
+
+    # Morphology operation
+    def thresh_reduction(x, y, thresh_value, input):
+        # Closing on X x Y#
+        # Thresh value is int
+        ret, thresh = cv2.threshold(input, int(thresh_value), 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        kernel = np.ones((int(x), int(y)),np.uint8)
+        closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE, kernel, iterations = 1)
+        return closing
+
+    output = thresh_reduction(4, 1, 1, binary)
+    output = thresh_reduction(4, 1, 1, output)
+
+    output = thresh_reduction(4, 1, 4, output)
+    output = thresh_reduction(4, 1, 3, output)
+
+    #Structural opening
+    kernel = np.ones((5, 5),np.uint8)
+    output = cv2.morphologyEx(output, cv2.MORPH_OPEN, kernel)
+
+
+    return output
+
+
+
+image_path = get_fullpath(os.getcwd(), "test.jpg")
+
+#show_image_from_path(image_path)
+
+image = preprocess(image_path)
+
+image = remove_images(image)
+
+
+show_image_from_variable(image)

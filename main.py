@@ -7,6 +7,12 @@ from PIL import Image
 from preprocess_tools import *
 from correction_tools import *
 
+"""
+TODOS:
+1. Loop through directories
+2. Get all ".jpg" and run script
+3. Save all files in a TXT and CSV directory in the main directory using same structure as the one of looped directories
+"""
 
 def clean_text_column(image):
     df = pytesseract.image_to_data(image, output_type='data.frame')

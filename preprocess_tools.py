@@ -2,6 +2,7 @@ import os
 import cv2
 from PIL import Image
 import numpy as np
+import imutils
 
 """
 TODOS:
@@ -57,6 +58,7 @@ def show_image_from_path(path):
     cv2.imshow(name_of_window, image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
 
 def show_image_from_variable(input):
     name_of_window = 'Test_Window'
@@ -228,39 +230,98 @@ def preprocess(image):
 
         return denoised_and_thresholded
 
-    #return thresh(denoise_and_threshold(scale(remove_pictures(denoise_color(normalize(image))))))
-    return normalize(image)
+    # return thresh(denoise_and_threshold(scale(remove_pictures(denoise_color(normalize(image))))))
+    return scale(denoise_color(normalize(image)))
 
 
-def remove_images(image, lower_area=15000, upper_area=35000):
-    b,g,r = cv2.split(image)
-    rgb_img = cv2.merge([r,g,b])
+def remove_images(image):
 
-    # Convert image from BGR to binary
-    binary = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2GRAY)
-
-    # Morphology operation
-    def thresh_reduction(x, y, thresh_value, input):
-        # Closing on X x Y#
+    # Threshold reduction:
+    def thresh_reduction(input, x, y, thresh_value, iterations=1):
+        # Closing on X x Y
         # Thresh value is int
-        ret, thresh = cv2.threshold(input, int(thresh_value), 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        kernel = np.ones((int(x), int(y)),np.uint8)
-        closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE, kernel, iterations = 1)
-        return closing
+        ret, thresh = cv2.threshold(input, int(
+            thresh_value), 255, cv2.THRESH_BINARY_INV)
+        # ret, thresh = cv2.threshold(input, int(thresh_value), 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        # kernel = np.ones((int(x), int(y)),np.uint8)
+        # closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE, kernel, iterations = int(iterations))
+        return thresh
 
-    output = thresh_reduction(4, 1, 1, binary)
-    output = thresh_reduction(4, 1, 1, output)
+    # Structural opening:
+    def structural_opening(input, x, y):
+        kernel = np.ones((x, y), np.uint8)
+        output = cv2.morphologyEx(input, cv2.MORPH_OPEN, kernel)
+        return output
 
-    output = thresh_reduction(4, 1, 4, output)
-    output = thresh_reduction(4, 1, 3, output)
+    # Dilation:
+    def dilate(input, x, y, iterations=1):
+        kernel = np.ones((x, y), np.uint8)
+        output = cv2.dilate(input, kernel, iterations=int(iterations))
+        return output
 
-    #Structural opening
-    kernel = np.ones((5, 5),np.uint8)
-    output = cv2.morphologyEx(output, cv2.MORPH_OPEN, kernel)
+    # Invertion:
+    def invert(input):
+        output = (255-input)
+        return output
 
+    # Read image:
+    b, g, r = cv2.split(image)
+    rgb_img = cv2.merge([r, g, b])
 
+    # Convert image from BGR to binary:
+    gray = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2GRAY)
+    (thresh, binary) = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
+
+    # First step:
+    output = thresh_reduction(binary, 4, 1, 1)
+    # output = thresh_reduction(output, 4, 1, 1)
+
+    # Morphology operation:
+    output = thresh_reduction(output, 4, 1, 4)
+    output = thresh_reduction(output, 4, 1, 3)
+
+    output = structural_opening(output, 5, 5)
+
+    output = dilate(output, 3, 3)
+    # output = invert(output)
     return output
 
+
+def find_contours(input, lower_area=500, upper_area=10000):
+
+    def is_elipse(c):
+        peri = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+        return not len(approx) == 4
+
+    contours, hierarchy = cv2.findContours(
+        input, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE)
+
+    print("Number of contours detected:", len(contours))
+
+    input = cv2.cvtColor(input, cv2.COLOR_GRAY2BGR)
+
+    mask = np.ones(image.shape[:2], dtype="uint8") * 255
+
+    # loop over the contours
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area < 1000:
+            continue
+
+        print(area)
+
+        if is_elipse(c):
+            cv2.drawContours(mask, [c], -1, 0, -1)
+        else:
+            continue
+
+    show_image_from_variable(mask)
+
+    output = cv2.drawContours(input, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+            
+    
+    return output
 
 
 image_path = get_fullpath(os.getcwd(), "test.jpg")
@@ -268,8 +329,10 @@ image_path = get_fullpath(os.getcwd(), "test.jpg")
 #show_image_from_path(image_path)
 
 image = preprocess(image_path)
+#show_image_from_variable(image)
 
 image = remove_images(image)
-
-
 show_image_from_variable(image)
+
+#image = find_contours(image)
+#show_image_from_variable(image)

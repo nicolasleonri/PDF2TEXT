@@ -240,11 +240,10 @@ def remove_images(image):
     def thresh_reduction(input, x, y, thresh_value, iterations=1):
         # Closing on X x Y
         # Thresh value is int
-        ret, thresh = cv2.threshold(input, int(
-            thresh_value), 255, cv2.THRESH_BINARY_INV)
+        ret, thresh = cv2.threshold(input, int(thresh_value), 255, cv2.THRESH_BINARY_INV)
         # ret, thresh = cv2.threshold(input, int(thresh_value), 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        # kernel = np.ones((int(x), int(y)),np.uint8)
-        # closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE, kernel, iterations = int(iterations))
+        #kernel = np.ones((int(x), int(y)),np.uint8)
+        #closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE, kernel, iterations = int(iterations))
         return thresh
 
     # Structural opening:
@@ -273,17 +272,20 @@ def remove_images(image):
     (thresh, binary) = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
 
     # First step:
-    output = thresh_reduction(binary, 4, 1, 1)
-    # output = thresh_reduction(output, 4, 1, 1)
+    output = thresh_reduction(binary, 4, 1, 1, 2)
 
     # Morphology operation:
     output = thresh_reduction(output, 4, 1, 4)
     output = thresh_reduction(output, 4, 1, 3)
 
     output = structural_opening(output, 5, 5)
+    output = dilate(output, 1, 4, 2)
 
-    output = dilate(output, 3, 3)
-    # output = invert(output)
+    # Last step:
+    output = structural_opening(output, 3, 3)
+    output = dilate(output, 1, 4, 2)
+
+    #output = invert(output)
     return output
 
 
@@ -306,7 +308,7 @@ def find_contours(input, lower_area=500, upper_area=10000):
     # loop over the contours
     for c in contours:
         area = cv2.contourArea(c)
-        if area < 1000:
+        if area < 5000:
             continue
 
         print(area)
@@ -316,7 +318,7 @@ def find_contours(input, lower_area=500, upper_area=10000):
         else:
             continue
 
-    show_image_from_variable(mask)
+    #show_image_from_variable(mask)
 
     output = cv2.drawContours(input, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
             
@@ -332,7 +334,7 @@ image = preprocess(image_path)
 #show_image_from_variable(image)
 
 image = remove_images(image)
-show_image_from_variable(image)
-
-#image = find_contours(image)
 #show_image_from_variable(image)
+
+image = find_contours(image)
+show_image_from_variable(image)

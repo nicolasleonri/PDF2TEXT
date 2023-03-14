@@ -1,6 +1,6 @@
 import os
 import csv
-import pandas
+import pandas as pd
 import numpy as np
 import pytesseract
 from PIL import Image
@@ -13,6 +13,7 @@ TODOS:
 2. Get all ".jpg" and run script
 3. Save all files in a TXT and CSV directory in the main directory using same structure as the one of looped directories
 """
+
 
 def clean_text_column(image):
     df = pytesseract.image_to_data(image, output_type='data.frame')
@@ -37,6 +38,7 @@ def clean_text_column(image):
         column_as_reference).agg(' '.join)
     output = output[output['text'].apply(lambda x: len(x.split(' ')) > 3)]
     output.drop(columns=output.columns[:6], axis=1, inplace=True)
+    output["page"] = ""
     output = output.reset_index(drop=True)
     return output
 
@@ -62,6 +64,54 @@ def image_to_txt_and_csv(input, output_filename):
     df_to_text_file(df, "text", str(output_filename))
 
 
+def image_to_df(input):
+    image = preprocess(input)
+    df = clean_text_column(image)
+    idx_page = int(str(input)[str(input).find('#')+1:str(input).find('#')+3])
+    df["page"] = idx_page
+
+    for i in range(len(df['text'])):
+        df.iloc[int(i), 5] = correct_line(unite_sign(
+            str(df.iloc[int(i), 5])), "combined_big_text.txt")
+
+    # df.to_csv(str(output_filename) + ".csv", index=False)
+    return df
+
 ##### TESTING #####
-image_to_txt_and_csv(get_fullpath(os.getcwd(), "test.jpg"), "testing")
-print("allgood")
+# image_to_txt_and_csv(get_fullpath(os.getcwd(), "test2.jpg"), "testing")
+# print("allgood")
+
+
+directory = get_fullpath(os.getcwd(), "Data/")
+
+for subdir, dirs, files in os.walk(directory):
+    imgs = []
+
+    for file in files:
+        if file.endswith(".jpg"):
+            imgs.append(os.path.join(subdir, file))
+
+    # Sorts by name
+    if imgs != []:
+        imgs = sorted(imgs)
+    else:
+        pass
+
+    df = pd.DataFrame()
+    name = str(os.path.basename(subdir)) + ".csv"
+    path = str(os.path.dirname(subdir))
+    completeName = os.path.join(path, name)
+    # f = open(completeName, "w+")
+
+    for element in imgs:
+        print("Working on: " + element)
+        # print(image_to_df(element))
+
+        df = pd.concat([df, image_to_df(element)])
+        df = df.reset_index(drop=True)
+        print(len(df))
+
+    if not df.empty:
+        df.to_csv(completeName, index=False)
+    else:
+        continue

@@ -61,10 +61,10 @@ def correct_line(line, dict):
         if spell.word_usage_frequency(str(val)) == 0.0:
             word = spell.correction(val)
             # Capitalize the corrected word if the original word is capitalized (not an acronym)
-            if str(val)[0].isupper() and not str(val).isupper():
+            if str(val)[0].isupper() and not str(val).isupper() and not word == None:
                 word = word.capitalize()
             # Uppercase the corrected word if the original word is uppercase
-            elif str(val).isupper():
+            elif str(val).isupper() and not word == None:
                 word = word.upper()
             # If the correction is None, call the Viterbi segmentation
             if word == None:

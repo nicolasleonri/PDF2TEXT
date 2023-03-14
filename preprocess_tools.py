@@ -230,8 +230,13 @@ def preprocess(image):
 
         return denoised_and_thresholded
 
-    # return thresh(denoise_and_threshold(scale(remove_pictures(denoise_color(normalize(image))))))
-    return scale(denoise_color(normalize(image)))
+    # Invertion:
+    def invert(input):
+        output = (255-input)
+        return output
+
+    return invert(thresh(denoise_and_threshold(scale((denoise_color(normalize(image)))))))
+    # return scale(denoise_color(normalize(image)))
 
 
 def remove_images(image):
@@ -240,10 +245,11 @@ def remove_images(image):
     def thresh_reduction(input, x, y, thresh_value, iterations=1):
         # Closing on X x Y
         # Thresh value is int
-        ret, thresh = cv2.threshold(input, int(thresh_value), 255, cv2.THRESH_BINARY_INV)
+        ret, thresh = cv2.threshold(input, int(
+            thresh_value), 255, cv2.THRESH_BINARY_INV)
         # ret, thresh = cv2.threshold(input, int(thresh_value), 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        #kernel = np.ones((int(x), int(y)),np.uint8)
-        #closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE, kernel, iterations = int(iterations))
+        # kernel = np.ones((int(x), int(y)),np.uint8)
+        # closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE, kernel, iterations = int(iterations))
         return thresh
 
     # Structural opening:
@@ -285,7 +291,7 @@ def remove_images(image):
     output = structural_opening(output, 3, 3)
     output = dilate(output, 1, 4, 2)
 
-    #output = invert(output)
+    # output = invert(output)
     return output
 
 
@@ -296,45 +302,52 @@ def find_contours(input, lower_area=500, upper_area=10000):
         approx = cv2.approxPolyDP(c, 0.02 * peri, True)
         return not len(approx) == 4
 
+    def is_square(c):
+        epsilon = 0.08*cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, epsilon, True)
+        return approx
+
+    approx_list = []
+
+    output = (255-input)
+    input = cv2.cvtColor(input, cv2.COLOR_GRAY2BGR)
+
     contours, hierarchy = cv2.findContours(
-        input, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE)
+        output, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
 
     print("Number of contours detected:", len(contours))
 
-    input = cv2.cvtColor(input, cv2.COLOR_GRAY2BGR)
-
-    mask = np.ones(image.shape[:2], dtype="uint8") * 255
+    mask = np.ones(input.shape[:2], dtype="uint8") * 255
 
     # loop over the contours
     for c in contours:
         area = cv2.contourArea(c)
-        if area < 5000:
-            continue
-
         print(area)
+        print(is_square(c))
+        if len(is_square(c)) == 4 and area > 200:
+            print(is_square(c))
+            approx_list.append(is_square(c))
+        # if area > 250 and area <8000:
+            # cv2.drawContours(mask, [c], -1, 0, -1)
 
-        if is_elipse(c):
-            cv2.drawContours(mask, [c], -1, 0, -1)
-        else:
-            continue
+    # show_image_from_variable(mask)
 
-    #show_image_from_variable(mask)
+    # output = cv2.drawContours(input, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+    output = cv2.drawContours(input, contours=approx_list, contourIdx=-1,
+                              color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
 
-    output = cv2.drawContours(input, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-            
-    
     return output
 
 
 image_path = get_fullpath(os.getcwd(), "test.jpg")
 
-#show_image_from_path(image_path)
+# show_image_from_path(image_path)
 
-image = preprocess(image_path)
-#show_image_from_variable(image)
+# image = preprocess(image_path)
+# show_image_from_variable(image)
 
-image = remove_images(image)
-#show_image_from_variable(image)
+# image = remove_images(image)
+# show_image_from_variable(image)
 
-image = find_contours(image)
-show_image_from_variable(image)
+# image = find_contours(image)
+# show_image_from_variable(image)

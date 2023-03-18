@@ -19,6 +19,7 @@ def clean_text_column(image):
     df = pytesseract.image_to_data(image, output_type='data.frame', lang="spa")
 
     df = df.replace(r'^\s*$', np.nan, regex=True).dropna(subset=["text"])
+
     # Confidence value:
     df = df[df['conf'] > 25]
 
@@ -36,6 +37,10 @@ def clean_text_column(image):
         column_as_reference).mean(), 2)
     output['text'] = df['text'].dropna().groupby(
         column_as_reference).agg(' '.join)
+    try:
+        output['text'] = output['text'].str.replace('º','o')
+    except Exception as e:
+        print(f'Function gave error {e}')
     output = output[output['text'].apply(lambda x: len(x.split(' ')) > 3)]
     output.drop(columns=output.columns[:6], axis=1, inplace=True)
     output["page"] = ""
@@ -110,7 +115,7 @@ for subdir, dirs, files in os.walk(directory):
         # print(image_to_df(element))
 
         df_toadd = image_to_df(element)
-        if len(df_toadd) < 5:
+        if len(df_toadd) < 2:
             print("TOO SHORT")
             continue
 

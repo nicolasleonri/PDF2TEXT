@@ -6,6 +6,7 @@ import pytesseract
 from PIL import Image
 from preprocess_tools import *
 from correction_tools import *
+from pdf2image import convert_from_path
 
 """
 TODOS:
@@ -89,7 +90,7 @@ def image_to_df(input):
 # image_to_txt_and_csv(get_fullpath(os.getcwd(), "test2.jpg"), "testing")
 # print("allgood")
 
-directory = get_fullpath(os.getcwd(), "Data/")
+directory = get_fullpath(os.getcwd(), "Data/Trome/2022/")
 
 for subdir, dirs, files in os.walk(directory):
     imgs = []
@@ -97,6 +98,24 @@ for subdir, dirs, files in os.walk(directory):
     for file in files:
         if file.endswith(".jpg"):
             imgs.append(os.path.join(subdir, file))
+        elif file.endswith(".pdf"):
+            path = os.path.join(subdir, file[6:16])
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            pages = convert_from_path(os.path.join(subdir, file), 600)
+
+            for idx, val in enumerate(pages):
+                file_name = str(file[:-4]) + "#" + f"{int(idx)+1:02d}" + ".jpg"
+                save_path = os.path.join(path, file_name)
+
+                if not os.path.exists(save_path):
+                    val.save(save_path, 'JPEG')
+                    print("done", save_path)
+
+                imgs.append(save_path)
+            print(imgs)
 
     # Sorts by name
     if imgs != []:

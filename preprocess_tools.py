@@ -339,12 +339,12 @@ def find_contours(input, lower_area=500, upper_area=10000):
     return output
 
 
-image_path = get_fullpath(os.getcwd(), "test.jpg")
+#image_path = get_fullpath(os.getcwd(), "test4.png")
 
-# show_image_from_path(image_path)
+#show_image_from_path(image_path)
 
-# image = preprocess(image_path)
-# show_image_from_variable(image)
+#image = preprocess(image_path)
+#show_image_from_variable(image)
 
 # image = remove_images(image)
 # show_image_from_variable(image)

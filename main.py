@@ -73,7 +73,8 @@ def image_to_txt_and_csv(input, output_filename):
 def image_to_df(input):
     image = preprocess(input)
     df = clean_text_column(image)
-    idx_page = int(str(input)[str(input).find('#')+1:str(input).find('#')+3])
+    idx_page = int(str(input)[str(input).find('#')+1:str(input).find('.')])
+    #idx_page = int(str(input)[str(input).find('#')+1:str(input).find('#')+3])
     df["page"] = idx_page
 
     try:
@@ -90,21 +91,24 @@ def image_to_df(input):
 # image_to_txt_and_csv(get_fullpath(os.getcwd(), "test2.jpg"), "testing")
 # print("allgood")
 
-directory = get_fullpath(os.getcwd(), "Data/Trome/2022/")
+directory = get_fullpath(os.getcwd(), "Data/Trome/2020")
 
 for subdir, dirs, files in os.walk(directory):
     imgs = []
 
     for file in files:
-        if file.endswith(".jpg"):
+        if file.endswith(".png"):
             imgs.append(os.path.join(subdir, file))
         elif file.endswith(".pdf"):
+            continue
+            print("Working on:", file)
             path = os.path.join(subdir, file[6:16])
+            #print(path)
+
+            pages = convert_from_path(os.path.join(subdir, file), 600, fmt='jpeg')
 
             if not os.path.exists(path):
                 os.makedirs(path)
-
-            pages = convert_from_path(os.path.join(subdir, file), 600)
 
             for idx, val in enumerate(pages):
                 file_name = str(file[:-4]) + "#" + f"{int(idx)+1:02d}" + ".jpg"
@@ -115,8 +119,7 @@ for subdir, dirs, files in os.walk(directory):
                     print("done", save_path)
 
                 imgs.append(save_path)
-            print(imgs)
-
+    
     # Sorts by name
     if imgs != []:
         imgs = sorted(imgs)
@@ -133,7 +136,12 @@ for subdir, dirs, files in os.walk(directory):
         print("Working on: " + element)
         # print(image_to_df(element))
 
-        df_toadd = image_to_df(element)
+        try:
+            df_toadd = image_to_df(element)
+        except Exception as e:
+            print("Error while preprocessing ", e)
+            continue
+        
         if len(df_toadd) < 2:
             print("TOO SHORT")
             continue
